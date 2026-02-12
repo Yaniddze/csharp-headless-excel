@@ -6,6 +6,7 @@ namespace ExcelTests.Calculators;
 public class ExcelConfigCalculator : CalcEngine.CalcEngine
 {
     private readonly ExcelConfig config;
+    private string? parentSheet;
 
     public ExcelConfigCalculator(ExcelConfig config)
     {
@@ -13,9 +14,9 @@ public class ExcelConfigCalculator : CalcEngine.CalcEngine
         IdentifierChars = "$:!";
     }
 
-    public object Evaluate(int rowIndex, int colIndex)
+    public object Evaluate(string? sheetToFind, int rowIndex, int colIndex)
     {
-        var sheet = config.Sheets.First();
+        var sheet = config.Sheets.First(x => x.Title == sheetToFind);
         // get the value
         var val = sheet.Cells[rowIndex][colIndex].Value;
         var text = val as string;
@@ -28,65 +29,9 @@ public class ExcelConfigCalculator : CalcEngine.CalcEngine
 
     public object Evaluate(string sheet, string expression)
     {
-        // Find the sheet by title
-        var targetSheet = config.Sheets.FirstOrDefault(s => s.Title == sheet);
-        if (targetSheet == null)
-        {
-            throw new ArgumentException($"Sheet '{sheet}' not found");
-        }
+        parentSheet = sheet;
 
-        // Set the current sheet context for cross-sheet references
-        // We need to modify the expression to handle sheet references
-        var modifiedExpression = expression;
-
-        // Replace sheet references like "SomeTitle!A1" with just "A1"
-        // and evaluate in the context of the referenced sheet
-        foreach (var s in config.Sheets)
-        {
-            var sheetRef = $"{s.Title}!";
-            if (expression.Contains(sheetRef))
-            {
-                // For now, we'll handle simple cases where we need to evaluate
-                // the referenced cell from another sheet
-                var cellRef = expression.Substring(expression.IndexOf(sheetRef) + sheetRef.Length);
-                return EvaluateCellFromSheet(s, cellRef);
-            }
-        }
-
-        return Evaluate(modifiedExpression);
-    }
-
-    private object EvaluateCellFromSheet(ExcelSheet sheet, string cellRef)
-    {
-        // Parse the cell reference (e.g., "A1", "B2")
-        int colIndex = cellRef[0] - 'A';
-        int rowIndex = int.Parse(cellRef.Substring(1)) - 1;
-
-        if (
-            rowIndex >= 0
-            && rowIndex < sheet.Cells.Count
-            && colIndex >= 0
-            && colIndex < sheet.Cells[rowIndex].Count
-        )
-        {
-            var cellValue = sheet.Cells[rowIndex][colIndex].Value;
-            if (cellValue is string str && str.StartsWith("="))
-            {
-                // This is a formula, we need to evaluate it in the context of this sheet
-                // For now, we'll use a simple approach
-                return EvaluateInSheetContext(sheet, str);
-            }
-            return cellValue;
-        }
-        return null;
-    }
-
-    private object EvaluateInSheetContext(ExcelSheet sheet, string formula)
-    {
-        // Create a temporary calculator for this sheet
-        var tempConfig = new ExcelConfig(new[] { sheet });
-        var tempCalculator = new ExcelConfigCalculator(tempConfig);
-        return tempCalculator.Evaluate(formula);
+        return Evaluate(expression);
     }
 
     /// <summary>
@@ -116,14 +61,24 @@ public class ExcelConfigCalculator : CalcEngine.CalcEngine
 
     private CellRange GetRange(string cell)
     {
+        var address = cell;
+        var currentSheet = parentSheet;
+
+        if (cell.Contains('!'))
+        {
+            var parts = cell.Split('!');
+            currentSheet = parts[0].Replace("'", "").Replace("\"", "");
+            address = parts[1];
+        }
+
         int index = 0;
 
         // parse row
         int row = -1;
         var absCol = false;
-        for (; index < cell.Length; index++)
+        for (; index < address.Length; index++)
         {
-            var c = cell[index];
+            var c = address[index];
             if (c == '$' && !absCol)
             {
                 absCol = true;
@@ -141,9 +96,9 @@ public class ExcelConfigCalculator : CalcEngine.CalcEngine
         // parse column
         int col = -1;
         var absRow = false;
-        for (; index < cell.Length; index++)
+        for (; index < address.Length; index++)
         {
-            var c = cell[index];
+            var c = address[index];
             if (c == '$' && !absRow)
             {
                 absRow = true;
@@ -159,20 +114,22 @@ public class ExcelConfigCalculator : CalcEngine.CalcEngine
         }
 
         // sanity
-        if (index < cell.Length)
+        if (index < address.Length)
         {
             throw new Exception("Invalid cell reference.");
         }
 
         // done
-        return new CellRange(row - 1, col - 1);
+        return new CellRange(currentSheet!, row - 1, col - 1);
     }
 
     private CellRange MergeRanges(CellRange rng1, CellRange rng2)
     {
         return new CellRange(
+            rng1.Sheet1,
             Math.Min(rng1.TopRow, rng2.TopRow),
             Math.Min(rng1.LeftCol, rng2.LeftCol),
+            rng1.Sheet2,
             Math.Max(rng1.BottomRow, rng2.BottomRow),
             Math.Max(rng1.RightCol, rng2.RightCol)
         );

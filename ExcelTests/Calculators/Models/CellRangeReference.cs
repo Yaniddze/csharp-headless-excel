@@ -2,7 +2,7 @@ using System.Collections;
 
 namespace ExcelTests.Calculators.Models;
 
-class CellRangeReference(CellRange rng, Func<int, int, object> EvaluateCell)
+class CellRangeReference(CellRange rng, Func<string?, int, int, object> EvaluateCell)
     : CalcEngine.IValueObject,
         IEnumerable
 {
@@ -21,8 +21,8 @@ class CellRangeReference(CellRange rng, Func<int, int, object> EvaluateCell)
         {
             for (int c = rng.LeftCol; c <= rng.RightCol; c++)
             {
-                var rng = new CellRange(r, c);
-                yield return GetValue(rng);
+                var localRng = new CellRange(rng.Sheet1, r, c);
+                yield return GetValue(localRng);
             }
         }
     }
@@ -36,7 +36,7 @@ class CellRangeReference(CellRange rng, Func<int, int, object> EvaluateCell)
         try
         {
             evaluating = true;
-            return EvaluateCell(rng.Row1, rng.Col1);
+            return EvaluateCell(rng.Sheet1, rng.Row1, rng.Col1);
         }
         finally
         {

@@ -1,9 +1,9 @@
 namespace ExcelTests.Calculators.Models;
 
-public record CellRange(int Row1, int Col1, int Row2, int Col2)
+public record CellRange(string? Sheet1, int Row1, int Col1, string? Sheet2, int Row2, int Col2)
 {
-    public CellRange(int row, int col)
-        : this(row, col, row, col) { }
+    public CellRange(string? sheet, int row, int col)
+        : this(sheet, row, col, sheet, row, col) { }
 
     public int TopRow => Math.Min(Row1, Row2);
     public int BottomRow => Math.Max(Row1, Row2);
