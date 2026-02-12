@@ -22,7 +22,7 @@ public class OneSheetTests
         var calculator = new ExcelConfigCalculator(new ExcelConfig(sheets));
 
         // Act
-        var result = (double)calculator.Evaluate("SomeTitle", "A3");
+        var result = (double)calculator.Evaluate("SomeTitle!A3");
 
         // Assert
         Assert.Equal(3d, result);
@@ -46,7 +46,7 @@ public class OneSheetTests
         var calculator = new ExcelConfigCalculator(new ExcelConfig(sheets));
 
         // Act
-        var result = (double)calculator.Evaluate("SomeTitle", "B3");
+        var result = (double)calculator.Evaluate("SomeTitle!B3");
 
         // Assert
         Assert.Equal(5d, result);
@@ -69,7 +69,7 @@ public class OneSheetTests
         var calculator = new ExcelConfigCalculator(new ExcelConfig(sheets));
 
         // Act
-        var result = (double)calculator.Evaluate("SomeTitle", "A3");
+        var result = (double)calculator.Evaluate("SomeTitle!A3");
 
         // Assert
         Assert.Equal(3d, result);
@@ -93,7 +93,7 @@ public class OneSheetTests
         var calculator = new ExcelConfigCalculator(new ExcelConfig(sheets));
 
         // Act
-        var result = (double)calculator.Evaluate("SomeTitle", "B3");
+        var result = (double)calculator.Evaluate("SomeTitle!B3");
 
         // Assert
         Assert.Equal(10d, result);

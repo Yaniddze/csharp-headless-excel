@@ -1,37 +1,63 @@
+using System.Text.RegularExpressions;
+using ExcelTests.Calculators.AdditionalFunctions;
 using ExcelTests.Calculators.Models;
 using ExcelTests.Models;
 
 namespace ExcelTests.Calculators;
 
-public class ExcelConfigCalculator : CalcEngine.CalcEngine
+public partial class ExcelConfigCalculator : CalcEngine.CalcEngine
 {
-    private readonly ExcelConfig config;
-    private string? parentSheet;
+    // SheetName -> RowIndex -> ColIndex -> Value
+    private Dictionary<string, Dictionary<int, Dictionary<int, object>>> cache = [];
 
     public ExcelConfigCalculator(ExcelConfig config)
     {
-        this.config = config;
         IdentifierChars = "$:!";
+        ProcessConfig(config);
+
+        this.RegisterFunctions();
     }
 
-    public object Evaluate(string? sheetToFind, int rowIndex, int colIndex)
+    public void ProcessConfig(ExcelConfig config)
     {
-        var sheet = config.Sheets.First(x => x.Title == sheetToFind);
-        // get the value
-        var val = sheet.Cells[rowIndex][colIndex].Value;
+        cache = config.Sheets.ToDictionary(
+            x => x.Title,
+            x =>
+                x.Cells.Select((row, rowIndex) => new { row, rowIndex })
+                    .ToDictionary(
+                        y => y.rowIndex,
+                        y =>
+                            y.row.Select((cell, colIndex) => new { cell, colIndex })
+                                .ToDictionary(
+                                    z => z.colIndex,
+                                    z => ProcessCellValue(z.cell.Value, x.Title)
+                                )
+                    )
+        );
+    }
+
+    private object ProcessCellValue(object value, string sheetName)
+    {
+        if (value is string strVal && strVal.StartsWith("="))
+        {
+            var regex = GetRegex();
+            var result = regex.Replace(strVal, match => $"{sheetName}!{match.Value}");
+            return result;
+        }
+
+        return value;
+    }
+
+    public object Evaluate(string sheetToFind, int rowIndex, int colIndex)
+    {
+        var val = cache[sheetToFind][rowIndex][colIndex];
+
         var text = val as string;
         if (!string.IsNullOrEmpty(text) && text.StartsWith("="))
         {
             return Evaluate(text);
         }
         return val;
-    }
-
-    public object Evaluate(string sheet, string expression)
-    {
-        parentSheet = sheet;
-
-        return Evaluate(expression);
     }
 
     /// <summary>
@@ -61,15 +87,14 @@ public class ExcelConfigCalculator : CalcEngine.CalcEngine
 
     private CellRange GetRange(string cell)
     {
-        var address = cell;
-        var currentSheet = parentSheet;
-
-        if (cell.Contains('!'))
+        if (!cell.Contains('!'))
         {
-            var parts = cell.Split('!');
-            currentSheet = parts[0].Replace("'", "").Replace("\"", "");
-            address = parts[1];
+            return new CellRange(null, -1, -1);
         }
+
+        var parts = cell.Split('!');
+        var currentSheet = parts[0].Replace("'", "").Replace("\"", "");
+        var address = parts[1];
 
         int index = 0;
 
@@ -123,9 +148,8 @@ public class ExcelConfigCalculator : CalcEngine.CalcEngine
         return new CellRange(currentSheet!, row - 1, col - 1);
     }
 
-    private CellRange MergeRanges(CellRange rng1, CellRange rng2)
-    {
-        return new CellRange(
+    private static CellRange MergeRanges(CellRange rng1, CellRange rng2) =>
+        new(
             rng1.Sheet1,
             Math.Min(rng1.TopRow, rng2.TopRow),
             Math.Min(rng1.LeftCol, rng2.LeftCol),
@@ -133,5 +157,7 @@ public class ExcelConfigCalculator : CalcEngine.CalcEngine
             Math.Max(rng1.BottomRow, rng2.BottomRow),
             Math.Max(rng1.RightCol, rng2.RightCol)
         );
-    }
+
+    [GeneratedRegex(@"(?<![A-Za-z0-9_!$])[A-Z]+\d+")]
+    private static partial Regex GetRegex();
 }
