@@ -6,6 +6,6 @@ public static class SetupFunctions
 {
     public static void RegisterFunctions(this ExcelConfigCalculator calculator)
     {
-        calculator.RegisterIfError().RegisterRoundDown();
+        calculator.RegisterIfError().RegisterRoundDown().RegisterSumproduct();
     }
 }

@@ -98,8 +98,8 @@ public partial class ExcelConfigCalculator : CalcEngine.CalcEngine
 
         int index = 0;
 
-        // parse row
-        int row = -1;
+        // parse column
+        int col = -1;
         var absCol = false;
         for (; index < address.Length; index++)
         {
@@ -113,13 +113,13 @@ public partial class ExcelConfigCalculator : CalcEngine.CalcEngine
             {
                 break;
             }
-            if (row < 0)
-                row = 0;
-            row = 26 * row + char.ToUpper(c) - 'A' + 1;
+            if (col < 0)
+                col = 0;
+            col = 26 * col + char.ToUpper(c) - 'A' + 1;
         }
 
-        // parse column
-        int col = -1;
+        // parse row
+        int row = -1;
         var absRow = false;
         for (; index < address.Length; index++)
         {
@@ -133,9 +133,9 @@ public partial class ExcelConfigCalculator : CalcEngine.CalcEngine
             {
                 break;
             }
-            if (col < 0)
-                col = 0;
-            col = 10 * col + (c - '0');
+            if (row < 0)
+                row = 0;
+            row = 10 * row + (c - '0');
         }
 
         // sanity

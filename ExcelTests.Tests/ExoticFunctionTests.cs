@@ -14,7 +14,7 @@ public class ExoticFunctionTests
             new(
                 "SomeTitle",
                 [
-                    [new(1), new(2), new(3), new("=SUM(A1,A2,A3)")],
+                    [new(1), new(2), new(3), new("=SUM(A1,B1,C1)")],
                 ]
             ),
         ];
@@ -22,10 +22,40 @@ public class ExoticFunctionTests
         var calculator = new ExcelConfigCalculator(new ExcelConfig(sheets));
 
         // Act
-        var result = (double)calculator.Evaluate("SomeTitle!A4");
+        var result = (double)calculator.Evaluate("SomeTitle!D1");
 
         // Assert
         Assert.Equal(6d, result);
+    }
+
+    [Fact]
+    public void SUMPRODUCT_Works()
+    {
+        // Arrange
+        List<ExcelSheet> sheets =
+        [
+            new(
+                "SomeTitle",
+                [
+                    [new(1), new(8), new(15)],
+                    [new(2), new(9), new(16)],
+                    [new(3), new(10), new(17)],
+                    [new(4), new(11), new(18)],
+                    [new(5), new(12), new(19)],
+                    [new(6), new(13), new(20)],
+                    [new(7), new(14), new(21)],
+                    [new("=SUMPRODUCT(A1:A7,B1:B7)")],
+                ]
+            ),
+        ];
+
+        var calculator = new ExcelConfigCalculator(new ExcelConfig(sheets));
+
+        // Act
+        var result = (double)calculator.Evaluate("SomeTitle!A8");
+
+        // Assert
+        Assert.Equal(336d, result);
     }
 
     [Fact]
@@ -37,7 +67,7 @@ public class ExoticFunctionTests
             new(
                 "SomeTitle",
                 [
-                    [new(1.23), new(2.25), new("=ROUND(SUM(A1,A2),1)")],
+                    [new(1.23), new(2.25), new("=ROUND(SUM(A1,B1),1)")],
                 ]
             ),
         ];
@@ -45,7 +75,7 @@ public class ExoticFunctionTests
         var calculator = new ExcelConfigCalculator(new ExcelConfig(sheets));
 
         // Act
-        var result = (double)calculator.Evaluate("SomeTitle!A3");
+        var result = (double)calculator.Evaluate("SomeTitle!C1");
 
         // Assert
         Assert.Equal(3.5d, result);
@@ -60,7 +90,7 @@ public class ExoticFunctionTests
             new(
                 "SomeTitle",
                 [
-                    [new(1.23), new(2.25), new("=ROUNDDOWN(SUM(A1,A2))")],
+                    [new(1.23), new(2.25), new("=ROUNDDOWN(SUM(A1,B1))")],
                 ]
             ),
         ];
@@ -68,7 +98,7 @@ public class ExoticFunctionTests
         var calculator = new ExcelConfigCalculator(new ExcelConfig(sheets));
 
         // Act
-        var result = (double)calculator.Evaluate("SomeTitle!A3");
+        var result = (double)calculator.Evaluate("SomeTitle!C1");
 
         // Assert
         Assert.Equal(3d, result);
@@ -83,7 +113,7 @@ public class ExoticFunctionTests
             new(
                 "SomeTitle",
                 [
-                    [new(1), new(2), new(3), new("=IF(A1=1,A2,A3)")],
+                    [new(1), new(2), new(3), new("=IF(A1=1,B1,C1)")],
                 ]
             ),
         ];
@@ -91,7 +121,7 @@ public class ExoticFunctionTests
         var calculator = new ExcelConfigCalculator(new ExcelConfig(sheets));
 
         // Act
-        var result = (int)calculator.Evaluate("SomeTitle!A4");
+        var result = (int)calculator.Evaluate("SomeTitle!D1");
 
         // Assert
         Assert.Equal(2d, result);
@@ -106,7 +136,7 @@ public class ExoticFunctionTests
             new(
                 "SomeTitle",
                 [
-                    [new(1), new(2), new(3), new("=MIN(A1,A2,A3)")],
+                    [new(1), new(2), new(3), new("=MIN(A1,B1,C1)")],
                 ]
             ),
         ];
@@ -114,7 +144,7 @@ public class ExoticFunctionTests
         var calculator = new ExcelConfigCalculator(new ExcelConfig(sheets));
 
         // Act
-        var result = (double)calculator.Evaluate("SomeTitle!A4");
+        var result = (double)calculator.Evaluate("SomeTitle!D1");
 
         // Assert
         Assert.Equal(1d, result);
